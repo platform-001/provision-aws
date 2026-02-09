@@ -1,4 +1,4 @@
-name: Provision AWS (Terraform)
+name: Provision AWS (Terraform) - Action 2
 
 on:
   workflow_dispatch:
@@ -10,17 +10,23 @@ on:
         description: "Java|Node|Net"
         required: true
         default: "Java"
+      crear_apprunner:
+        description: "true/false - crea App Runner (requiere imagen inicial)"
+        required: true
+        default: "false"
+      imagen_inicial:
+        description: "Opcional. Ej: 123456789012.dkr.ecr.us-east-1.amazonaws.com/demo-01:seed"
+        required: false
+        default: ""
 
 jobs:
   provision:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write   # OIDC
+      id-token: write
       contents: read
 
     steps:
-
-
       - uses: actions/checkout@v4
 
       - name: Configure AWS credentials (OIDC)
@@ -28,16 +34,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_TF }}
           aws-region: ${{ secrets.AWS_REGION }}
-      # (OIDC recomendado) :contentReference[oaicite:1]{index=1}
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_TF }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      
-      - name: Who am I
-        run: aws sts get-caller-identity
-        
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
@@ -45,39 +42,34 @@ jobs:
         working-directory: infra
         run: terraform init
 
-      - name: Terraform Apply (ECR + App Runner)
+      - name: Terraform Apply (ECR + optional App Runner)
         working-directory: infra
         env:
           TF_VAR_cod_servicio: ${{ inputs.cod_servicio }}
           TF_VAR_region: ${{ secrets.AWS_REGION }}
+          TF_VAR_crear_apprunner: ${{ inputs.crear_apprunner }}
+          TF_VAR_imagen_inicial: ${{ inputs.imagen_inicial }}
         run: terraform apply -auto-approve
 
-      - name: Output values
+      - name: Export Terraform outputs
         working-directory: infra
         run: |
           echo "ECR_REPO=$(terraform output -raw ecr_repo_name)" >> $GITHUB_ENV
-          echo "APP_RUNNER_SERVICE_ARN=$(terraform output -raw apprunner_service_arn)" >> $GITHUB_ENV
-          echo "APP_RUNNER_URL=$(terraform output -raw apprunner_service_url)" >> $GITHUB_ENV
+          echo "ECR_REPO_ARN=$(terraform output -raw ecr_repo_arn)" >> $GITHUB_ENV
+          echo "APP_RUNNER_SERVICE_ARN=$(terraform output -raw apprunner_service_arn 2>/dev/null || true)" >> $GITHUB_ENV
+          echo "APP_RUNNER_URL=$(terraform output -raw apprunner_service_url 2>/dev/null || true)" >> $GITHUB_ENV
 
-      # Opcional: actualizar Port aquí mismo (webhook), marcando "Generado"
-      - name: Update Port (estado aprovisionamiento)
+      - name: Update Port (estado aprovisionamiento + outputs)
         if: always()
         env:
-          PORT_WEBHOOK_URL: ${{ secrets.PORT_WEBHOOK_URL_INFRA }}
-          COD: ${{ inputs.cod_servicio }}
-          URL: ${{ env.APP_RUNNER_URL }}
-          ARN: ${{ env.APP_RUNNER_SERVICE_ARN }}
+          PORT_WEBHOOK_URL: ${{ secrets.PORT_WEBHOOK_URL }}
+          COD_SERVICIO: ${{ inputs.cod_servicio }}
+          TECNOLOGIA: ${{ inputs.tecnologia }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECR_REPO: ${{ env.ECR_REPO }}
+          ECR_REPO_ARN: ${{ env.ECR_REPO_ARN }}
+          APP_RUNNER_SERVICE_ARN: ${{ env.APP_RUNNER_SERVICE_ARN }}
+          APP_RUNNER_URL: ${{ env.APP_RUNNER_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          python - << 'PY'
-          import json, os
-          payload = {
-            "microservicio": {
-              "cod_servicio": os.environ["COD"],
-              "nombre_servicio": os.environ["COD"],
-              "tecnologia": "Java",
-              "estado_de_aprovisionamiento": "Generado"
-            }
-          }
-          print(json.dumps(payload))
-          PY > payload.json
-                    curl -sS -X POST -H "Content-Type: application/json" -d @payload.json "$PORT_WEBHOOK_URL_AP"
+          python scripts/port_provision_update.py
