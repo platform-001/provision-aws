@@ -19,14 +19,7 @@ jobs:
       contents: read
 
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_TF }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      
-      - name: Who am I
-        run: aws sts get-caller-identity
+
 
       - uses: actions/checkout@v4
 
@@ -36,7 +29,15 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_TF }}
           aws-region: ${{ secrets.AWS_REGION }}
       # (OIDC recomendado) :contentReference[oaicite:1]{index=1}
-
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_TF }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Who am I
+        run: aws sts get-caller-identity
+        
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
