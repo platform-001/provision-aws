@@ -12,9 +12,26 @@ resource "aws_ecr_repository" "svc" {
   name = var.cod_servicio
 }
 
-# App Runner necesita una imagen inicial en ECR para crear el servicio.
-# Para demo rápida, puedes crear el servicio manual una vez,
-# o crear el servicio apuntando a una imagen placeholder si ya la tienes.
+# App Runner: lo creamos SOLO si crear_apprunner=true y hay imagen_inicial
+locals {
+  do_apprunner = var.crear_apprunner && length(var.imagen_inicial) > 0
+}
 
-# Recomendación demo: en este TF crea ECR y deja App Runner opcional,
-# y luego el pipeline del microservicio hace el primer push + update-service.
+resource "aws_apprunner_service" "svc" {
+  count = local.do_apprunner ? 1 : 0
+
+  service_name = "${var.cod_servicio}-service"
+
+  source_configuration {
+    image_repository {
+      image_identifier      = var.imagen_inicial
+      image_repository_type = "ECR"
+
+      image_configuration {
+        port = "8080"
+      }
+    }
+
+    auto_deployments_enabled = false
+  }
+}

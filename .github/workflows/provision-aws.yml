@@ -3,6 +3,10 @@ name: Provision AWS (Terraform) - Action 2
 on:
   workflow_dispatch:
     inputs:
+      accion:
+        description: "apply | destroy"
+        required: true
+        default: "apply"
       cod_servicio:
         description: "Código del microservicio (ej: demo-01)"
         required: true
@@ -10,14 +14,6 @@ on:
         description: "Java|Node|Net"
         required: true
         default: "Java"
-      crear_apprunner:
-        description: "true/false - crea App Runner (requiere imagen inicial)"
-        required: true
-        default: "false"
-      imagen_inicial:
-        description: "Opcional. Ej: 123456789012.dkr.ecr.us-east-1.amazonaws.com/demo-01:seed"
-        required: false
-        default: ""
 
 jobs:
   provision:
@@ -29,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials (OIDC)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_TF }}
@@ -42,34 +38,30 @@ jobs:
         working-directory: infra
         run: terraform init
 
-      - name: Terraform Apply (ECR + optional App Runner)
+      # APPLY
+      - name: Terraform Apply
+        if: inputs.accion == 'apply'
         working-directory: infra
         env:
           TF_VAR_cod_servicio: ${{ inputs.cod_servicio }}
           TF_VAR_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_crear_apprunner: ${{ inputs.crear_apprunner }}
-          TF_VAR_imagen_inicial: ${{ inputs.imagen_inicial }}
         run: terraform apply -auto-approve
 
-      - name: Export Terraform outputs
+      # DESTROY
+      - name: Terraform Destroy
+        if: inputs.accion == 'destroy'
         working-directory: infra
-        run: |
-          echo "ECR_REPO=$(terraform output -raw ecr_repo_name)" >> $GITHUB_ENV
-          echo "ECR_REPO_ARN=$(terraform output -raw ecr_repo_arn)" >> $GITHUB_ENV
-          echo "APP_RUNNER_SERVICE_ARN=$(terraform output -raw apprunner_service_arn 2>/dev/null || true)" >> $GITHUB_ENV
-          echo "APP_RUNNER_URL=$(terraform output -raw apprunner_service_url 2>/dev/null || true)" >> $GITHUB_ENV
+        env:
+          TF_VAR_cod_servicio: ${{ inputs.cod_servicio }}
+          TF_VAR_region: ${{ secrets.AWS_REGION }}
+        run: terraform destroy -auto-approve
 
-      - name: Update Port (estado aprovisionamiento + outputs)
+      - name: Update Port (estado)
         if: always()
         env:
-          PORT_WEBHOOK_URL: ${{ secrets.PORT_WEBHOOK_URL }}
-          COD_SERVICIO: ${{ inputs.cod_servicio }}
-          TECNOLOGIA: ${{ inputs.tecnologia }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          ECR_REPO: ${{ env.ECR_REPO }}
-          ECR_REPO_ARN: ${{ env.ECR_REPO_ARN }}
-          APP_RUNNER_SERVICE_ARN: ${{ env.APP_RUNNER_SERVICE_ARN }}
-          APP_RUNNER_URL: ${{ env.APP_RUNNER_URL }}
+          PORT_WEBHOOK_URL: ${{ secrets.PORT_WEBHOOK_URL_INFRA }}
+          COD: ${{ inputs.cod_servicio }}
+          ACCION: ${{ inputs.accion }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           python scripts/port_provision_update.py
