@@ -31,7 +31,7 @@ def main() -> int:
         print("ERROR: Missing PORT_WEBHOOK_URL or COD_SERVICIO", file=sys.stderr)
         return 2
 
-    branch_identifier = f"{cod}:main"
+    branch_identifier = f"{cod}"
 
     # estado de aprovisionamiento del microservicio
     if accion == "destroy":
@@ -62,7 +62,7 @@ def main() -> int:
     # Crea/actualiza ECR entity en apply
     if accion != "destroy" and ecr_repository_url:
         payload["ecr_repository"] = {
-            "identifier": f"ecr:{cod}:main",
+            "identifier": f"ecr:{cod}",
             "repo_name": ecr_repo,
             "aws_region": aws_region,
             "aws_account_id": aws_account_id,
