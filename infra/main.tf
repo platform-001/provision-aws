@@ -21,7 +21,8 @@ locals {
   ecr_repo_name = lower(replace(var.cod_servicio, ":", "-"))
 
   # App Runner solo si se pidió y hay imagen inicial
-  do_apprunner = var.crear_apprunner && length(trimspace(var.imagen_inicial)) > 0
+  #do_apprunner = var.crear_apprunner && length(trimspace(var.imagen_inicial)) > 0
+  do_apprunner = var.crear_apprunner
 }
 
 resource "aws_ecr_repository" "svc" {
@@ -35,11 +36,11 @@ resource "aws_apprunner_service" "svc" {
 
   source_configuration {
     image_repository {
-      image_identifier      = var.imagen_inicial
-      image_repository_type = "ECR"
+      image_identifier      = "public.ecr.aws/docker/library/nginx:latest"
+      image_repository_type = "ECR_PUBLIC"
 
       image_configuration {
-        port = "8080"
+        port = "80"
       }
     }
 
