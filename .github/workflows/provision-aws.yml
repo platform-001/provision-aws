@@ -46,7 +46,7 @@ jobs:
           TF_VAR_cod_servicio: ${{ inputs.cod_servicio }}
           TF_VAR_region: ${{ secrets.AWS_REGION }}
         run: terraform apply -auto-approve
-
+    
       # DESTROY
       - name: Terraform Destroy
         if: inputs.accion == 'destroy'
@@ -56,12 +56,30 @@ jobs:
           TF_VAR_region: ${{ secrets.AWS_REGION }}
         run: terraform destroy -auto-approve
 
+      - name: Export AWS account id
+        if: inputs.accion == 'apply'
+        run: |
+          echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+
+      - name: Export Terraform outputs
+        if: inputs.accion == 'apply'
+        working-directory: infra
+        run: |
+          echo "ECR_REPO=$(terraform output -raw ecr_repo_name)" >> $GITHUB_ENV
+          echo "ECR_REPO_ARN=$(terraform output -raw ecr_repo_arn)" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY_URL=$(terraform output -raw ecr_repository_url)" >> $GITHUB_ENV
+          
       - name: Update Port (estado)
         if: always()
         env:
           PORT_WEBHOOK_URL: ${{ secrets.PORT_WEBHOOK_URL_INFRA }}
           COD: ${{ inputs.cod_servicio }}
+          TECNOLOGIA: ${{ inputs.tecnologia }}
           ACCION: ${{ inputs.accion }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
+          ECR_REPO: ${{ env.ECR_REPO }}
+          ECR_REPOSITORY_URL: ${{ env.ECR_REPOSITORY_URL }}
         run: |
           python scripts/port_provision_update.py
