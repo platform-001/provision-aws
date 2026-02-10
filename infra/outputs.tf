@@ -6,6 +6,10 @@ output "ecr_repo_arn" {
   value = aws_ecr_repository.svc.arn
 }
 
+output "ecr_repository_url" {
+  value = aws_ecr_repository.svc.repository_url
+}
+
 output "apprunner_service_arn" {
   value       = try(aws_apprunner_service.svc[0].arn, "")
   description = "Solo si se crea App Runner"
