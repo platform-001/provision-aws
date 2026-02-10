@@ -36,7 +36,11 @@ jobs:
 
       - name: Terraform Init
         working-directory: infra
-        run: terraform init
+        run: |
+          terraform init -reconfigure \
+          -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+          -backend-config="key=services/${{ inputs.cod_servicio }}.tfstate" \
+          -backend-config="region=${{ secrets.TF_STATE_REGION }}"
 
       # APPLY
       - name: Terraform Apply
