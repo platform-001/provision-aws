@@ -11,11 +11,9 @@ output "ecr_repository_url" {
 }
 
 output "apprunner_service_arn" {
-  value       = try(aws_apprunner_service.svc[0].arn, "")
-  description = "Solo si se crea App Runner"
+  value = try(aws_apprunner_service.svc[0].arn, "")
 }
 
 output "apprunner_service_url" {
-  value       = try(aws_apprunner_service.svc[0].service_url, "")
-  description = "Solo si se crea App Runner"
+  value = try(aws_apprunner_service.svc[0].service_url, "")
 }

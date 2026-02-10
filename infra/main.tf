@@ -1,27 +1,49 @@
 terraform {
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
   }
-   backend "s3" {}
+
+  backend "s3" {}
+}
+
+variable "cod_servicio" { type = string }
+variable "region" { type = string }
+
+variable "crear_apprunner" {
+  type    = bool
+  default = false
+}
+
+variable "imagen_inicial" {
+  type    = string
+  default = ""
 }
 
 provider "aws" {
   region = var.region
 }
 
-resource "aws_ecr_repository" "svc" {
-  name = var.cod_servicio
+locals {
+  # ECR repo name: por microservicio (sin branch), sanitizado para ECR
+  # - minúsculas
+  # - ':' -> '-'
+  ecr_repo_name = lower(replace(var.cod_servicio, ":", "-"))
+
+  # App Runner solo si se pidió y hay imagen inicial
+  do_apprunner = var.crear_apprunner && length(trimspace(var.imagen_inicial)) > 0
 }
 
-# App Runner: lo creamos SOLO si crear_apprunner=true y hay imagen_inicial
-locals {
-  do_apprunner = var.crear_apprunner && length(var.imagen_inicial) > 0
+resource "aws_ecr_repository" "svc" {
+  name = local.ecr_repo_name
 }
 
 resource "aws_apprunner_service" "svc" {
   count = local.do_apprunner ? 1 : 0
 
-  service_name = "${var.cod_servicio}-service"
+  service_name = "${local.ecr_repo_name}-service"
 
   source_configuration {
     image_repository {
