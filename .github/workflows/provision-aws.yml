@@ -72,7 +72,11 @@ jobs:
           echo "ECR_REPO=$(terraform output -raw ecr_repo_name)" >> $GITHUB_ENV
           echo "ECR_REPO_ARN=$(terraform output -raw ecr_repo_arn)" >> $GITHUB_ENV
           echo "ECR_REPOSITORY_URL=$(terraform output -raw ecr_repository_url)" >> $GITHUB_ENV
-          
+          echo "ECR_REPOSITORY_ARN=$(terraform output -raw ecr_repo_arn)" >> $GITHUB_ENV
+          echo "APPRUNNER_SERVICE_URL=$(terraform output -raw apprunner_service_url)" >> $GITHUB_ENV
+          echo "APPRUNNER_SERVICE_ARN=$(terraform output -raw apprunner_service_arn)" >> $GITHUB_ENV
+       
+
       - name: Update Port (estado)
         if: always()
         env:
@@ -85,5 +89,8 @@ jobs:
           AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
           ECR_REPO: ${{ env.ECR_REPO }}
           ECR_REPOSITORY_URL: ${{ env.ECR_REPOSITORY_URL }}
+          ECR_REPOSITORY_ARN: ${{ env.ECR_REPOSITORY_ARN }}
+          APPRUNNER_SERVICE_URL: ${{ env.APPRUNNER_SERVICE_URL }}
+          APPRUNNER_SERVICE_ARN: ${{ env.APPRUNNER_SERVICE_ARN }}
         run: |
           python scripts/port_provision_update.py

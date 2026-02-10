@@ -26,6 +26,9 @@ def main() -> int:
     aws_account_id = os.environ.get("AWS_ACCOUNT_ID", "")
     ecr_repo = os.environ.get("ECR_REPO", cod or "")
     ecr_repository_url = os.environ.get("ECR_REPOSITORY_URL", "")
+    ecr_repository_arn = os.environ.get("ECR_REPOSITORY_ARN", "")
+    apprunner_service_url = os.environ.get("APPRUNNER_SERVICE_URL", "")
+    apprunner_service_arn = os.environ.get("APPRUNNER_SERVICE_ARN", "")
 
     if not port_url or not cod:
         print("ERROR: Missing PORT_WEBHOOK_URL or COD_SERVICIO", file=sys.stderr)
@@ -66,11 +69,16 @@ def main() -> int:
             "repo_name": ecr_repo,
             "aws_region": aws_region,
             "aws_account_id": aws_account_id,
-            "repository_uri": ecr_repository_url,
+            "repository_url": ecr_repository_url,
+            "repository_arn": ecr_repository_arn,
+            "apprunner_service_url": apprunner_service_url,
+            "apprunner_service_arn": apprunner_service_arn,
             "image_tag": "",
             "image_uri": "",
             "pushed_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-            "branch_identifier": branch_identifier
+            "branch_identifier": branch_identifier,
+
+
         }
 
     print(f"Updating Port: {cod} estado_aprov={estado_aprov} build_status={build_status} ecr={bool(ecr_repository_url)}")
