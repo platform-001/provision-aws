@@ -77,7 +77,7 @@ jobs:
         if: always()
         env:
           PORT_WEBHOOK_URL: ${{ secrets.PORT_WEBHOOK_URL_INFRA }}
-          COD: ${{ inputs.cod_servicio }}
+          COD_SERVICIO: ${{ inputs.cod_servicio }}
           TECNOLOGIA: ${{ inputs.tecnologia }}
           ACCION: ${{ inputs.accion }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
