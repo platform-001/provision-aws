@@ -37,11 +37,11 @@ resource "aws_apprunner_service" "svc" {
 
   source_configuration {
     image_repository {
-      image_identifier      = "public.ecr.aws/docker/library/nginx:latest"
-      image_repository_type = "ECR_PUBLIC"
+      image_identifier      = "${aws_ecr_repository.svc.repository_url}:${var.imagen_inicial}"
+      image_repository_type = "ECR"
 
       image_configuration {
-        port = "80"
+        port = "8080"
       }
     }
 

@@ -49,9 +49,32 @@ jobs:
         env:
           TF_VAR_cod_servicio: ${{ inputs.cod_servicio }}
           TF_VAR_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_crear_apprunner: true
+          TF_VAR_crear_apprunner: false
         run: terraform apply -auto-approve
-    
+      - name: Read ECR URL
+        id: out1
+        working-directory: infra
+        run: |
+          echo "ecr_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
+      - name: Push bootstrap image to ECR
+        env:
+          ECR_URL: ${{ steps.out1.outputs.ecr_url }}
+        run: |
+          aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin "$(echo "$ECR_URL" | cut -d/ -f1)"
+          docker pull public.ecr.aws/docker/library/nginx:latest
+          docker tag public.ecr.aws/docker/library/nginx:latest "${ECR_URL}:bootstrap"
+          docker push "${ECR_URL}:bootstrap"
+
+      - name: Terraform apply (Create App Runner with ECR type)
+        working-directory: infra
+        env:
+          TF_VAR_cod_servicio: ${{ inputs.cod_servicio }}
+          TF_VAR_region: ${{ secrets.AWS_REGION }}
+          TF_VAR_crear_apprunner: false
+          TF_VAR_imagen_inicialr: "bootstrap"
+        run: terraform apply -auto-approve
+
+
       # DESTROY
       - name: Terraform Destroy
         if: inputs.accion == 'destroy'

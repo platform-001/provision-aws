@@ -3,10 +3,10 @@ variable "region" { type = string }
 
 variable "crear_apprunner" {
   type    = bool
-  default = false
+  default = true
 }
 
 variable "imagen_inicial" {
   type    = string
-  default = ""
+  default = "bootstrap"
 }
