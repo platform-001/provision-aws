@@ -52,6 +52,7 @@ jobs:
           TF_VAR_crear_apprunner: false
         run: terraform apply -auto-approve
       - name: Read ECR URL
+        if: inputs.accion == 'apply'
         id: out1
         working-directory: infra
         run: |
