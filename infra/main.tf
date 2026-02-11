@@ -27,6 +27,7 @@ locals {
 
 resource "aws_ecr_repository" "svc" {
   name = local.ecr_repo_name
+  force_delete = true
 }
 
 resource "aws_apprunner_service" "svc" {
