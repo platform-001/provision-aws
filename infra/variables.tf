@@ -10,3 +10,10 @@ variable "imagen_inicial" {
   type    = string
   default = "bootstrap"
 }
+
+
+variable "apprunner_access_role_arn" {
+  type    = string
+}
+
+
