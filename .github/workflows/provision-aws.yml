@@ -61,10 +61,10 @@ jobs:
           ECR_URL: ${{ steps.out1.outputs.ecr_url }}
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin "$(echo "$ECR_URL" | cut -d/ -f1)"
-          docker pull public.ecr.aws/docker/library/nginx:latest
-          docker tag public.ecr.aws/docker/library/nginx:latest "${ECR_URL}:bootstrap"
+          docker pull public.ecr.aws/nginx/nginx:latest
+          docker tag public.ecr.aws/nginx/nginx:latest "${ECR_URL}:bootstrap"
           docker push "${ECR_URL}:bootstrap"
-
+          
       - name: Terraform apply (Create App Runner with ECR type)
         working-directory: infra
         env:
