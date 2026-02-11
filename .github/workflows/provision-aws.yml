@@ -60,7 +60,7 @@ jobs:
         env:
           ECR_URL: ${{ steps.out1.outputs.ecr_url }}
         run: |
-          aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin "$(echo "$ECR_URL" | cut -d/ -f1)"
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin "$(echo "$ECR_URL" | cut -d/ -f1)"
           docker pull public.ecr.aws/docker/library/nginx:latest
           docker tag public.ecr.aws/docker/library/nginx:latest "${ECR_URL}:bootstrap"
           docker push "${ECR_URL}:bootstrap"
