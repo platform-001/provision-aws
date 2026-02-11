@@ -22,7 +22,6 @@ def main() -> int:
     url_action = os.environ.get("RUN_URL", "")
     aws_region = os.environ.get("AWS_REGION", "")
     aws_account_id = os.environ.get("AWS_ACCOUNT_ID", "")
-    ecr_repo = os.environ.get("ECR_REPO", cod or "")
     ecr_repository_url = os.environ.get("ECR_REPOSITORY_URL", "")
     ecr_repository_arn = os.environ.get("ECR_REPOSITORY_ARN", "")
 
@@ -49,10 +48,9 @@ def main() -> int:
     }
 
     # Crea/actualiza ECR entity en apply
-    if accion != "destroy" and ecr_repository_url:
+    if accion == "destroy" and ecr_repository_url:
         payload["microservicio"] = {
-            "identifier": f"ecr:{cod}",
-            "repo_name": ecr_repo,
+            "identifier": cod,
             "aws_region": "",
             "aws_account_id": "",
             "repository_url": "",
