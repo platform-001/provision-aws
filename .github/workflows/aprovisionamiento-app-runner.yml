@@ -1,0 +1,33 @@
+name: Create App Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      cod_servicio:
+        description: "Código del servicio (ej: demo-01)"
+        required: true
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEPLOY }}
+          aws-region: us-east-1
+
+      - name: Create App Runner
+        run: |
+          aws apprunner create-service \
+            --service-name "${{ inputs.cod_servicio }}" \
+            --source-configuration '{
+              "ImageRepository": {
+                "ImageIdentifier": "public.ecr.aws/nginx/nginx:latest",
+                "ImageRepositoryType": "ECR_PUBLIC",
+                "ImageConfiguration": {"Port": "80"}
+              }
+            }'
