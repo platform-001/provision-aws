@@ -49,37 +49,8 @@ jobs:
         env:
           TF_VAR_cod_servicio: ${{ inputs.cod_servicio }}
           TF_VAR_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_crear_apprunner: false
-          TF_VAR_apprunner_access_role_arn: ${{ secrets.AWS_ROLE_ARN_APPRUNNER_ECR }}
         run: terraform apply -auto-approve
-      - name: Read ECR URL
-        if: inputs.accion == 'apply'
-        id: out1
-        working-directory: infra
-        run: |
-          echo "ecr_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
-      - name: Push bootstrap image to ECR
-        if: inputs.accion == 'apply'
-        env:
-          ECR_URL: ${{ steps.out1.outputs.ecr_url }}
-        run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin "$(echo "$ECR_URL" | cut -d/ -f1)"
-          docker pull public.ecr.aws/nginx/nginx:latest
-          docker tag public.ecr.aws/nginx/nginx:latest "${ECR_URL}:bootstrap"
-          docker push "${ECR_URL}:bootstrap"
-          
-      - name: Terraform apply (Create App Runner with ECR type)
-        if: inputs.accion == 'apply'
-        working-directory: infra
-        env:
-          TF_VAR_cod_servicio: ${{ inputs.cod_servicio }}
-          TF_VAR_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_crear_apprunner: true
-          TF_VAR_imagen_inicial: "bootstrap"
-          TF_VAR_apprunner_access_role_arn: ${{ secrets.AWS_ROLE_ARN_APPRUNNER_ECR }}
-        run: terraform apply -auto-approve
-
-
+      
       # DESTROY
       - name: Terraform Destroy
         if: inputs.accion == 'destroy'
@@ -87,7 +58,6 @@ jobs:
         env:
           TF_VAR_cod_servicio: ${{ inputs.cod_servicio }}
           TF_VAR_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_apprunner_access_role_arn: ${{ secrets.AWS_ROLE_ARN_APPRUNNER_ECR }}
         run: terraform destroy -auto-approve
 
       - name: Export AWS account id
@@ -103,8 +73,6 @@ jobs:
           echo "ECR_REPO_ARN=$(terraform output -raw ecr_repo_arn)" >> $GITHUB_ENV
           echo "ECR_REPOSITORY_URL=$(terraform output -raw ecr_repository_url)" >> $GITHUB_ENV
           echo "ECR_REPOSITORY_ARN=$(terraform output -raw ecr_repo_arn)" >> $GITHUB_ENV
-          echo "APPRUNNER_SERVICE_URL=$(terraform output -raw apprunner_service_url)" >> $GITHUB_ENV
-          echo "APPRUNNER_SERVICE_ARN=$(terraform output -raw apprunner_service_arn)" >> $GITHUB_ENV
        
 
       - name: Update Port (estado)
@@ -112,7 +80,6 @@ jobs:
         env:
           PORT_WEBHOOK_URL: ${{ secrets.PORT_WEBHOOK_URL_INFRA }}
           COD_SERVICIO: ${{ inputs.cod_servicio }}
-          TECNOLOGIA: ${{ inputs.tecnologia }}
           ACCION: ${{ inputs.accion }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -120,7 +87,5 @@ jobs:
           ECR_REPO: ${{ env.ECR_REPO }}
           ECR_REPOSITORY_URL: ${{ env.ECR_REPOSITORY_URL }}
           ECR_REPOSITORY_ARN: ${{ env.ECR_REPOSITORY_ARN }}
-          APPRUNNER_SERVICE_URL: ${{ env.APPRUNNER_SERVICE_URL }}
-          APPRUNNER_SERVICE_ARN: ${{ env.APPRUNNER_SERVICE_ARN }}
         run: |
           python scripts/port_provision_update.py
