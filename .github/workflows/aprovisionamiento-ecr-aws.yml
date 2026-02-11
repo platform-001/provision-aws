@@ -10,10 +10,6 @@ on:
       cod_servicio:
         description: "Código del servicio (ej: demo-01)"
         required: true
-      tecnologia:
-        description: "Java|Node|Net"
-        required: true
-        default: "Java"
 
 jobs:
   provision:
