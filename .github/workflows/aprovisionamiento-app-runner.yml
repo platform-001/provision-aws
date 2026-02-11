@@ -22,8 +22,10 @@ jobs:
 
       - name: Create App Runner
         run: |
+          SERVICE= "${{ inputs.cod_servicio }}"
+          SAFE_SERVICE = $(echo "$SERVICE" | tr ':' '-')
           aws apprunner create-service \
-            --service-name "${{ replace(inputs.cod_servicio, ':', '-') }}" \
+            --service-name "$SAFE_SERVICE" \
             --source-configuration '{
               "ImageRepository": {
                 "ImageIdentifier": "public.ecr.aws/nginx/nginx:latest",
