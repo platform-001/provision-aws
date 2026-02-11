@@ -22,8 +22,8 @@ jobs:
 
       - name: Create App Runner
         run: |
-          SERVICE= "${{ inputs.cod_servicio }}"
-          SAFE_SERVICE = $(echo "$SERVICE" | tr ':' '-')
+          SERVICE="${{ inputs.cod_servicio }}"
+          SAFE_SERVICE=$(echo "$SERVICE" | tr ':' '-')
           aws apprunner create-service \
             --service-name "$SAFE_SERVICE" \
             --source-configuration '{
